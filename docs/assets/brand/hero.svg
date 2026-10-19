@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-labelledby="hero-t hero-d">
+  <title id="hero-t">Sortify: name your files by what is inside them</title>
+  <desc id="hero-d">Animated banner with flowing ribbons in the Sortify palette, a glass tile mark, and the tagline.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#121316"/>
+      <stop offset="1" stop-color="#060607"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C8CED6"/>
+      <stop offset="0.55" stop-color="#F4F7F6"/>
+      <stop offset="1" stop-color="#F4DFBC"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B1D22"/>
+      <stop offset="1" stop-color="#0B0C0E"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#C8CED6" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#C8CED6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F4DFBC" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#F4DFBC" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="frame"><rect width="1280" height="360" rx="28"/></clipPath>
+  </defs>
+  <style>
+    .blob-a { animation: drift-a 16s ease-in-out infinite alternate; }
+    .blob-b { animation: drift-b 20s ease-in-out infinite alternate; }
+    .flow { stroke: url(#ribbon); stroke-width: 11; fill: none; stroke-linecap: round;
+            stroke-dasharray: 140 60; animation: flow 6s linear infinite; }
+    .flow.f2 { animation-duration: 7.5s; animation-direction: reverse; }
+    .flow.f3 { animation-duration: 9s; }
+    .sweep { animation: sweep 5s ease-in-out infinite; }
+    .tag-1 { animation: rise 1.2s ease-out both; }
+    .tag-2 { animation: rise 1.2s ease-out 0.35s both; }
+    @keyframes drift-a { to { transform: translate(90px, 40px); } }
+    @keyframes drift-b { to { transform: translate(-80px, -30px); } }
+    @keyframes flow { to { stroke-dashoffset: -200; } }
+    @keyframes sweep { 0%, 100% { transform: translateX(-120px); } 50% { transform: translateX(120px); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="360" fill="url(#bg)"/>
+    <circle class="blob-a" cx="230" cy="120" r="260" fill="url(#glowA)"/>
+    <circle class="blob-b" cx="1080" cy="260" r="240" fill="url(#glowB)"/>
+    <!-- Mark: glass tile with ribbons -->
+    <g transform="translate(120 96)">
+      <rect width="168" height="168" rx="42" fill="url(#tile)" stroke="#3A3F47" stroke-width="3"/>
+      <clipPath id="tileclip"><rect width="168" height="168" rx="42"/></clipPath>
+      <g clip-path="url(#tileclip)">
+        <rect class="sweep" x="0" y="0" width="60" height="168" fill="#E2E6EC" opacity="0.07" transform="skewX(-12)"/>
+      </g>
+      <path class="flow" d="M30 66 C 58 48, 88 84, 138 62" />
+      <path class="flow f2" d="M30 92 C 62 74, 98 110, 138 88" stroke="#F4F7F6"/>
+      <path class="flow f3" d="M30 118 C 62 100, 98 136, 138 114" stroke="#F4DFBC"/>
+    </g>
+    <!-- Wordmark and tagline -->
+    <text x="340" y="172" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif" font-size="92" font-weight="700" fill="#F4F7F6" letter-spacing="-1">Sortify</text>
+    <text class="tag-1" x="344" y="222" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif" font-size="30" font-weight="500" fill="#E2E6EC">Name every file by what is inside it.</text>
+    <text class="tag-2" x="344" y="262" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif" font-size="20" font-weight="600" letter-spacing="3" fill="#8FA3A0">ORDER, BY DESIGN  ·  LOCAL-FIRST  ·  UNDOABLE</text>
+  </g>
+  <rect x="1" y="1" width="1278" height="358" rx="27" fill="none" stroke="#3A3F47" stroke-width="2"/>
+</svg>

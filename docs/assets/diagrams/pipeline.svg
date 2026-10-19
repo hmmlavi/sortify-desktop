@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 220" width="1200" height="220" role="img" aria-labelledby="pl-t pl-d">
+  <title id="pl-t">Sortify pipeline</title>
+  <desc id="pl-d">Six steps: Scan, Extract, Propose, Review, Apply, Undo. Nothing is renamed until the user applies a reviewed plan.</desc>
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A1C20"/>
+      <stop offset="1" stop-color="#0E0F12"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C8CED6"/>
+      <stop offset="1" stop-color="#F4DFBC"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .link { stroke: url(#arrow); stroke-width: 3; fill: none; stroke-dasharray: 10 8; animation: march 1.2s linear infinite; }
+    .step { font-family: Segoe UI, Inter, Helvetica, Arial, sans-serif; }
+    @keyframes march { to { stroke-dashoffset: -36; } }
+    @media (prefers-reduced-motion: reduce) { .link { animation: none; } }
+  </style>
+  <rect width="1200" height="220" rx="20" fill="#0B0C0E"/>
+  <g stroke="#3A3F47" stroke-width="1.5">
+    <rect x="20" y="50" width="172" height="120" rx="18" fill="url(#card)"/>
+    <rect x="214" y="50" width="172" height="120" rx="18" fill="url(#card)"/>
+    <rect x="408" y="50" width="172" height="120" rx="18" fill="url(#card)"/>
+    <rect x="602" y="50" width="172" height="120" rx="18" fill="url(#card)"/>
+    <rect x="796" y="50" width="172" height="120" rx="18" fill="url(#card)"/>
+    <rect x="990" y="50" width="172" height="120" rx="18" fill="url(#card)"/>
+  </g>
+  <g class="step" text-anchor="middle">
+    <text x="106" y="92" font-size="13" font-weight="700" fill="#C8CED6">01</text>
+    <text x="106" y="128" font-size="22" font-weight="700" fill="#F4F7F6">Scan</text>
+    <text x="106" y="152" font-size="13" fill="#8FA3A0">read the folder</text>
+
+    <text x="300" y="92" font-size="13" font-weight="700" fill="#C8CED6">02</text>
+    <text x="300" y="128" font-size="22" font-weight="700" fill="#F4F7F6">Extract</text>
+    <text x="300" y="152" font-size="13" fill="#8FA3A0">text from documents</text>
+
+    <text x="494" y="92" font-size="13" font-weight="700" fill="#C8CED6">03</text>
+    <text x="494" y="128" font-size="22" font-weight="700" fill="#F4F7F6">Propose</text>
+    <text x="494" y="152" font-size="13" fill="#8FA3A0">local or AI names</text>
+
+    <text x="688" y="92" font-size="13" font-weight="700" fill="#C8CED6">04</text>
+    <text x="688" y="128" font-size="22" font-weight="700" fill="#F4F7F6">Review</text>
+    <text x="688" y="152" font-size="13" fill="#8FA3A0">edit, approve, resolve</text>
+
+    <text x="882" y="92" font-size="13" font-weight="700" fill="#C8CED6">05</text>
+    <text x="882" y="128" font-size="22" font-weight="700" fill="#F4F7F6">Apply</text>
+    <text x="882" y="152" font-size="13" fill="#8FA3A0">rename on disk</text>
+
+    <text x="1076" y="92" font-size="13" font-weight="700" fill="#C8CED6">06</text>
+    <text x="1076" y="128" font-size="22" font-weight="700" fill="#F4F7F6">Undo</text>
+    <text x="1076" y="152" font-size="13" fill="#8FA3A0">restore from history</text>
+  </g>
+  <g class="link">
+    <line x1="194" y1="110" x2="212" y2="110"/>
+    <line x1="388" y1="110" x2="406" y2="110"/>
+    <line x1="582" y1="110" x2="600" y2="110"/>
+    <line x1="776" y1="110" x2="794" y2="110"/>
+    <line x1="970" y1="110" x2="988" y2="110"/>
+  </g>
+  <text x="600" y="206" text-anchor="middle" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif" font-size="14" fill="#8FA3A0">Nothing changes on disk until you apply a reviewed plan.</text>
+</svg>

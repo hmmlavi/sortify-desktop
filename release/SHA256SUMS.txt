@@ -1,0 +1,3 @@
+63c22f3291c5640d66708e54e5de9c769570f70cbccf68053bec578bfb1b4dbe  Sortify-Setup-1.0.0.exe
+33f52d94cafeecfe4de0e0ed23cbf6859d4f7d4b20ad40ee18412731940f9e6e  Sortify-1.0.0-windows-x64-standalone.zip
+b1a5fb02a7328535819c4488dfe69c355827ee7cd7d1611b980696b227861a08  Sortify-1.0.0-windows-x64-portable.zip

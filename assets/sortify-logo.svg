@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 72" fill="none">
+  <defs>
+    <linearGradient id="tile" x1="8" y1="4" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#122528"/>
+      <stop offset="0.55" stop-color="#0B1417"/>
+      <stop offset="1" stop-color="#070D0F"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="8" y1="5" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#BFF3EC" stop-opacity="0.55"/>
+      <stop offset="0.45" stop-color="#7FD8D0" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#79B8B2" stop-opacity="0.34"/>
+    </linearGradient>
+    <linearGradient id="ribbonTop" x1="13" y1="21" x2="51" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FE3DA"/><stop offset="1" stop-color="#B8F3EC"/>
+    </linearGradient>
+    <linearGradient id="ribbonMid" x1="13" y1="32" x2="51" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CFE6E3"/><stop offset="1" stop-color="#F3FBFA"/>
+    </linearGradient>
+    <linearGradient id="ribbonLow" x1="13" y1="43" x2="51" y2="43" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C9A874"/><stop offset="1" stop-color="#EBD6AE"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(4 4)">
+    <rect x="2.5" y="2.5" width="59" height="59" rx="17.5" fill="url(#tile)"/>
+    <rect x="3.3" y="3.3" width="57.4" height="57.4" rx="16.8" stroke="url(#rim)" stroke-width="1.4"/>
+    <path d="M19 4.4H45C50.4 4.4 54.8 7.2 56.7 11.6" stroke="#E9FFFC" stroke-opacity="0.34" stroke-width="1" stroke-linecap="round"/>
+    <path d="M14 21.5C19.2 14.4 24.4 28.6 29.8 21.5C34.1 15.9 37.4 21.5 50 21.5" stroke="url(#ribbonTop)" stroke-width="4.2" stroke-linecap="round"/>
+    <path d="M14 32C20.6 24.6 25.4 39.4 32.2 32C37.8 25.9 42.4 32 50 32" stroke="url(#ribbonMid)" stroke-width="4.2" stroke-linecap="round"/>
+    <path d="M14 42.5C19.6 36.3 24.8 49.2 30.6 42.5C34.8 37.7 37.6 42.5 50 42.5" stroke="url(#ribbonLow)" stroke-width="4.2" stroke-linecap="round"/>
+    <circle cx="51.2" cy="32" r="2.55" fill="#F4DFBC"/>
+  </g>
+  <text x="86" y="38" fill="#F4F7F6" font-family="Segoe UI Variable Display, Segoe UI, Inter, sans-serif" font-size="27" font-weight="650" letter-spacing="-0.2">Sortify</text>
+  <text x="87.5" y="56" fill="#8FA3A0" font-family="Segoe UI, Inter, sans-serif" font-size="8.2" font-weight="600" letter-spacing="2.35">ORDER, BY DESIGN</text>
+</svg>

@@ -1,0 +1,450 @@
+name: Sortify CI & Windows Release
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-and-lint:
+    name: Automated Tests & Static Analysis (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies and QA tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest ruff
+
+      - name: Run Ruff static analysis
+        run: ruff check app main.py tests packaging
+
+      - name: Run unit & integration test suite
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          pytest -v --tb=short > pytest-output.log 2>&1
+          status=$?
+          tail -n 40 pytest-output.log
+          exit $status
+
+      - name: Publish test failures as annotations
+        if: failure()
+        shell: bash
+        run: |
+          if [ -f pytest-output.log ]; then
+            grep -E "^(FAILED|ERROR|E  |assert|=+ .* (failed|errors))" pytest-output.log | head -n 40 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+            echo "::error::----- pytest log tail -----"
+            tail -n 30 pytest-output.log | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+          fi
+
+      - name: Run CLI diagnostic verification
+        run: python main.py --diagnose
+
+      - name: Run GUI smoke test (Windows)
+        if: runner.os == 'Windows' && matrix.python-version == '3.12'
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          python packaging/gui_smoke_test.py --output smoke > smoke-run.log 2>&1
+          tail -n 40 smoke-run.log
+          python - <<'PY'
+          import json, sys
+          report = json.load(open("smoke/smoke-report.json", encoding="utf-8"))
+          print("GUI smoke:", report["ok"], len(report["steps"]), "checks")
+          sys.exit(0 if report["ok"] and len(report["steps"]) >= 20 else 1)
+          PY
+          status=$?
+          if [ $status -eq 0 ]; then
+            echo "::notice::Windows GUI smoke harness passed all checks"
+          fi
+          if [ $status -ne 0 ]; then
+            python - <<'PY'
+          import pathlib
+          text = pathlib.Path("smoke-run.log").read_text(errors="replace")
+          encoded = text[-3500:].replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+          print("::error::GUI smoke failed:%0A" + encoded)
+          PY
+          fi
+          exit $status
+
+      - name: Publish GUI smoke log on the pull request
+        if: failure() && runner.os == 'Windows' && matrix.python-version == '3.12'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "### Windows GUI smoke failure"
+            echo
+            echo '```'
+            tail -n 150 smoke-run.log 2>/dev/null || echo "no smoke-run.log"
+            echo '```'
+            echo
+            echo '```json'
+            cat smoke/smoke-report.json 2>/dev/null || echo "no report"
+            echo '```'
+          } > smoke-comment.md
+          cat smoke-comment.md >> "$GITHUB_STEP_SUMMARY"
+          pr_number="${{ github.event.pull_request.number }}"
+          if [ -z "$pr_number" ]; then
+            pr_number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" --state all --json number -q '.[0].number' 2>/dev/null || true)
+          fi
+          echo "Pull request resolved to '${pr_number}'"
+          if [ -z "$pr_number" ]; then
+            exit 0
+          fi
+          if ! gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body-file smoke-comment.md; then
+            echo "::warning::Could not comment on pull request #${pr_number}; the log is in this job summary."
+          fi
+
+      - name: Upload GUI smoke screenshots
+        if: runner.os == 'Windows' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sortify-GUI-Smoke-Windows
+          path: |
+            smoke/smoke-report.json
+            smoke/*.png
+
+  portable-windows:
+    name: Portable Windows Build (no Windows host required)
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install portable build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install pefile ziglang
+
+      - name: Fetch embeddable runtime and Windows wheels
+        run: python packaging/prepare_portable_inputs.py --output build-inputs
+
+      - name: Assemble portable distribution
+        run: |
+          python packaging/build_portable_windows.py --runtime build-inputs/winpy --wheels build-inputs/wheels --output dist/Sortify
+          mkdir -p release/windows
+          mv dist/Sortify-1.0.0-windows-x64-portable.zip release/windows/
+
+      - name: Verify portable artifacts
+        run: |
+          test -f dist/Sortify/Sortify.exe
+          test -f dist/Sortify/boot.py
+          test -f release/windows/Sortify-1.0.0-windows-x64-portable.zip
+          test ! -e dist/Sortify/tests
+          python packaging/build_release.py --checksums-only
+
+      - name: Upload portable Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sortify-Portable-Windows-v1.0.0
+          path: |
+            release/windows/Sortify-1.0.0-windows-x64-portable.zip
+            dist/Sortify/Sortify.exe
+            dist/Sortify/build-info.json
+            release/SHA256SUMS.txt
+
+  package-windows:
+    name: Build Windows Standalone App & Inno Setup Installer
+    needs: test-and-lint
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Create isolated build virtual environment
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip
+          .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+      - name: Install Inno Setup 6
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $candidates = @(
+            (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+            (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
+            (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+          )
+          $iscc = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) { throw 'ISCC.exe was not found after installing Inno Setup' }
+          Write-Host "Using $iscc"
+          Split-Path $iscc | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Run Windows build & standalone smoke test
+        shell: bash
+        run: |
+          set +e
+          cmd //c "packaging\\build_windows.bat" > build-output.log 2>&1
+          status=$?
+          tail -n 60 build-output.log
+          exit $status
+
+      - name: Publish the Windows build log on the pull request
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f build-output.log ]; then
+            {
+              echo "### Windows packaging log (last 150 lines)"
+              echo
+              echo '```'
+              tail -n 150 build-output.log
+              echo '```'
+            } > build-log-comment.md
+            pr_number="${{ github.event.pull_request.number }}"
+          if [ -z "$pr_number" ]; then
+            pr_number=$(gh pr list --head "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" --state open --json number -q '.[0].number')
+          fi
+            if [ -n "$pr_number" ]; then
+              gh pr comment "$pr_number" --body-file build-log-comment.md
+            else
+              echo "no open pull request for $GITHUB_REF_NAME"
+            fi
+          fi
+
+      - name: Verify release artifacts exist
+        shell: pwsh
+        run: |
+          if (!(Test-Path "dist\Sortify\Sortify.exe")) { throw "Missing dist\Sortify\Sortify.exe" }
+          if (!(Test-Path "release\Sortify-Setup-1.0.0.exe")) { throw "Missing release\Sortify-Setup-1.0.0.exe" }
+          if (!(Test-Path "release\SHA256SUMS.txt")) { throw "Missing release\SHA256SUMS.txt" }
+          Get-Content "release\SHA256SUMS.txt"
+
+      - name: Launch the packaged GUI on Windows
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $env:SORTIFY_DATA_DIR = Join-Path $env:RUNNER_TEMP 'sortify-gui-check'
+          $process = Start-Process -FilePath 'dist\Sortify\Sortify.exe' -WorkingDirectory 'dist\Sortify' -PassThru
+          Start-Sleep -Seconds 10
+          if ($process.HasExited) {
+            $log = Join-Path $env:SORTIFY_DATA_DIR 'startup-error.log'
+            if (Test-Path $log) { Get-Content $log }
+            throw "Sortify.exe exited during startup with code $($process.ExitCode)"
+          }
+          Stop-Process -Id $process.Id -Force
+          Write-Host 'Packaged GUI stayed running for 10 seconds under the offscreen Qt platform.'
+
+      - name: Record packaged artifact details
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Windows packaged artifacts"
+            echo
+            for f in "dist/Sortify/Sortify.exe" "release/Sortify-Setup-1.0.0.exe"; do
+              if [ -f "$f" ]; then
+                size=$(stat -c %s "$f")
+                sha=$(sha256sum "$f" | cut -d' ' -f1)
+                echo "- \`$f\` - $size bytes - SHA-256 \`$sha\`"
+              fi
+            done
+            for f in "dist/Sortify/Sortify.exe" "release/Sortify-Setup-1.0.0.exe"; do
+              if [ -f "$f" ]; then
+                echo "::notice::$f $(stat -c %s "$f") bytes sha256 $(sha256sum "$f" | cut -d' ' -f1)"
+              fi
+            done
+            echo
+            echo "Diagnostics from the packaged build (run outside the source tree):"
+            echo
+            echo '```'
+            sed -n '/^\[3\/5\]/,/^\[4\/5\]/p' build-output.log || true
+            echo '```'
+            echo
+            echo "release/SHA256SUMS.txt:"
+            echo
+            echo '```'
+            cat release/SHA256SUMS.txt || true
+            echo '```'
+          } > artifact-report.md
+          cat artifact-report.md
+
+      - name: Publish artifact details on the pull request
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The artifacts are the deliverable; the step summary always carries the
+          # details, and the pull-request comment is a best-effort mirror.
+          if [ -f artifact-report.md ]; then
+            cat artifact-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          pr_number="${{ github.event.pull_request.number }}"
+          if [ -z "$pr_number" ]; then
+            pr_number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" --state all --json number -q '.[0].number' 2>/dev/null || true)
+          fi
+          echo "Pull request resolved to '${pr_number}'"
+          if [ -z "$pr_number" ] || [ ! -f artifact-report.md ]; then
+            exit 0
+          fi
+          if ! gh pr comment "$pr_number" --repo "$GITHUB_REPOSITORY" --body-file artifact-report.md; then
+            echo "::warning::Could not comment on pull request #${pr_number}; the details are in this job summary."
+          fi
+
+      - name: Package standalone folder
+        shell: pwsh
+        run: |
+          Compress-Archive -Path 'dist\Sortify\*' -DestinationPath 'release\Sortify-1.0.0-windows-x64-standalone.zip' -Force
+          if (!(Test-Path 'release\Sortify-1.0.0-windows-x64-standalone.zip')) { throw 'standalone ZIP was not created' }
+
+      - name: Silent install and smoke-test the installer
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'sortify-installed'
+          $setup = (Resolve-Path 'release\Sortify-Setup-1.0.0.exe').Path
+          $install = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=$dir" -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw "Installer exited with code $($install.ExitCode)" }
+          $exe = Join-Path $dir 'Sortify.exe'
+          if (!(Test-Path $exe)) { throw "Installed Sortify.exe not found at $exe" }
+          $env:SORTIFY_DATA_DIR = Join-Path $env:RUNNER_TEMP 'sortify-installed-data'
+          $diag = Start-Process -FilePath $exe -ArgumentList '--diagnose' -WorkingDirectory $dir -PassThru -Wait -NoNewWindow
+          if ($diag.ExitCode -ne 0) { throw "Installed --diagnose exited with code $($diag.ExitCode)" }
+          $uninstall = Start-Process -FilePath (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru -Wait
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller exited with code $($uninstall.ExitCode)" }
+          if (Test-Path $exe) { throw 'Sortify.exe still present after uninstall' }
+          Write-Host 'Installer, installed --diagnose, and uninstaller all passed.'
+
+      - name: Upload Windows Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sortify-Windows-Release-v1.0.0
+          path: |
+            release/Sortify-Setup-1.0.0.exe
+            release/Sortify-1.0.0-windows-x64-standalone.zip
+            release/SHA256SUMS.txt
+            release/RELEASE_NOTES.md
+
+  verify-portable-windows:
+    name: Run the portable ZIP on Windows
+    needs: portable-windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Download portable artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Sortify-Portable-Windows-v1.0.0
+          path: portable-dl
+
+      - name: Extract and run the portable build
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem -Recurse -Filter 'Sortify-1.0.0-windows-x64-portable.zip' portable-dl | Select-Object -First 1
+          if (!$zip) { throw 'Portable ZIP not found in the artifact' }
+          $dest = Join-Path $env:RUNNER_TEMP 'portable'
+          Expand-Archive -Path $zip.FullName -DestinationPath $dest -Force
+          $exe = Get-ChildItem -Recurse -Filter 'Sortify.exe' $dest | Select-Object -First 1
+          if (!$exe) { throw 'Sortify.exe not found inside the portable ZIP' }
+          $env:SORTIFY_DATA_DIR = Join-Path $env:RUNNER_TEMP 'portable-data'
+          $diag = Start-Process -FilePath $exe.FullName -ArgumentList '--diagnose' -WorkingDirectory $exe.DirectoryName -PassThru -Wait -NoNewWindow
+          if ($diag.ExitCode -ne 0) { throw "Portable --diagnose exited with code $($diag.ExitCode)" }
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          $gui = Start-Process -FilePath $exe.FullName -WorkingDirectory $exe.DirectoryName -PassThru
+          Start-Sleep -Seconds 10
+          if ($gui.HasExited) {
+            $log = Join-Path $env:SORTIFY_DATA_DIR 'startup-error.log'
+            if (Test-Path $log) { Get-Content $log }
+            throw "Portable Sortify.exe exited during startup with code $($gui.ExitCode)"
+          }
+          Stop-Process -Id $gui.Id -Force
+          Write-Host 'Portable build: --diagnose passed and the GUI stayed running for 10 seconds.'
+
+  publish-release:
+    name: Publish GitHub Release from tag
+    # Runs only for a version tag push (for example v1.0.0). Other runs stop here.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [package-windows, verify-portable-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download portable artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Sortify-Portable-Windows-v1.0.0
+          path: dl/portable
+
+      - name: Download Windows release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Sortify-Windows-Release-v1.0.0
+          path: dl/windows
+
+      - name: Collect and verify the release assets
+        run: |
+          set -euo pipefail
+          mkdir -p publish
+          for name in Sortify-Setup-1.0.0.exe Sortify-1.0.0-windows-x64-standalone.zip Sortify-1.0.0-windows-x64-portable.zip; do
+            found=$(find dl -type f -name "$name" | head -n 1)
+            test -n "$found" || { echo "missing $name"; exit 1; }
+            cp "$found" publish/
+          done
+          python packaging/verify_release_assets.py publish --notes-out "${{ runner.temp }}/release-notes.md"
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create v1.0.0 \
+            publish/Sortify-Setup-1.0.0.exe \
+            publish/Sortify-1.0.0-windows-x64-standalone.zip \
+            publish/Sortify-1.0.0-windows-x64-portable.zip \
+            publish/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" \
+            --title "Sortify 1.0.0" \
+            --notes-file "${{ runner.temp }}/release-notes.md"
