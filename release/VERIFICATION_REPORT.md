@@ -1,21 +1,13 @@
 # Verification report: Sortify 1.0.0
 
-Source commit: `d4441d1`. Tag: `v1.0.0`. Release: <https://github.com/hmmlavi/sortify/releases/tag/v1.0.0>.
+Repository: <https://github.com/hmmlavi/sortify-desktop>.
 
-## Checks run in GitHub Actions (run 39219875094)
+The release workflow is triggered by the `v1.0.0` tag. Its checks cover linting, unit tests, diagnostics, GUI smoke tests, portable Windows execution, standalone packaging, installer installation and execution, and release asset verification. The release job publishes the installer, portable ZIP, standalone ZIP, and SHA-256 checksums from the tagged build.
 
-| Job | Runner | Result |
-| --- | --- | --- |
-| Ruff, unit tests (unittest and pytest), `--diagnose`, GUI smoke test | Ubuntu and Windows, Python 3.11 and 3.12 | Passed |
-| Portable Windows build | Ubuntu | Passed (ZIP assembled, CRC-tested) |
-| Standalone folder, installer (Inno Setup), installer silent install, installed `--diagnose`, silent uninstall | Windows | Passed |
-| Portable ZIP extracted and run: `--diagnose`, GUI stays up for 10 seconds | Windows | Passed |
-| Release asset verification (ZIP CRC, PE header and machine type) and release creation | Ubuntu | Passed |
+A successful pre-release build is recorded at <https://github.com/hmmlavi/sortify-desktop/actions/runs/39263031908>. That run passed its Linux and Windows lint/test jobs, standalone/installer job, portable build job, and portable Windows smoke test. The tagged release run is the authoritative verification for the published assets and will be linked here after publication.
 
-The checksums in `SHA256SUMS.txt` are the SHA-256 values GitHub reports for the release assets. Each download URL returns a redirect from github.com to GitHub's asset storage.
-
-## Not verified
+## Not verified by CI
 
 - Interactive use on a physical Windows desktop.
-- Authenticode signing and SmartScreen behavior (no certificate).
-- The local Linux GUI smoke harness exits with code 134 at interpreter shutdown in this sandbox, after all 20 checks pass. The same harness exits 0 on the Windows runner.
+- Authenticode signing and SmartScreen behavior (the builds are unsigned).
+- OCR for image-only PDFs; password-protected files are reported as unreadable.

@@ -65,12 +65,12 @@ Release **v1.0.0** is built by GitHub Actions on a Windows runner from the tagge
 
 | File | What it is |
 | --- | --- |
-| [`Sortify-Setup-1.0.0.exe`](https://github.com/hmmlavi/sortify/releases/download/v1.0.0/Sortify-Setup-1.0.0.exe) | Installer. Per-user, no administrator rights, Start Menu entry, and an uninstaller that keeps your data by default. |
-| [`Sortify-1.0.0-windows-x64-portable.zip`](https://github.com/hmmlavi/sortify/releases/download/v1.0.0/Sortify-1.0.0-windows-x64-portable.zip) | Portable build. Unzip anywhere and run `Sortify.exe`. Bundles its own Python and Qt. |
-| [`Sortify-1.0.0-windows-x64-standalone.zip`](https://github.com/hmmlavi/sortify/releases/download/v1.0.0/Sortify-1.0.0-windows-x64-standalone.zip) | PyInstaller folder build. Unzip, then run `Sortify.exe` inside it. |
-| [`SHA256SUMS.txt`](https://github.com/hmmlavi/sortify/releases/download/v1.0.0/SHA256SUMS.txt) | SHA-256 checksums of the three files above. |
+| [`Sortify-Setup-1.0.0.exe`](https://github.com/hmmlavi/sortify-desktop/releases/download/v1.0.0/Sortify-Setup-1.0.0.exe) | Installer. Per-user, no administrator rights, Start Menu entry, and an uninstaller that keeps your data by default. |
+| [`Sortify-1.0.0-windows-x64-portable.zip`](https://github.com/hmmlavi/sortify-desktop/releases/download/v1.0.0/Sortify-1.0.0-windows-x64-portable.zip) | Portable build. Unzip anywhere and run `Sortify.exe`. Bundles its own Python and Qt. |
+| [`Sortify-1.0.0-windows-x64-standalone.zip`](https://github.com/hmmlavi/sortify-desktop/releases/download/v1.0.0/Sortify-1.0.0-windows-x64-standalone.zip) | PyInstaller folder build. Unzip, then run `Sortify.exe` inside it. |
+| [`SHA256SUMS.txt`](https://github.com/hmmlavi/sortify-desktop/releases/download/v1.0.0/SHA256SUMS.txt) | SHA-256 checksums of the three files above. |
 
-All release files are on the [Releases page](https://github.com/hmmlavi/sortify/releases/tag/v1.0.0). Check a download before running it:
+All release files are on the [Releases page](https://github.com/hmmlavi/sortify-desktop/releases/tag/v1.0.0). Check a download before running it:
 
 ```powershell
 Get-FileHash .\Sortify-Setup-1.0.0.exe -Algorithm SHA256
