@@ -13,55 +13,28 @@ import re
 # generic document from a single incidental word.
 _CATEGORY_TERMS: dict[str, tuple[str, ...]] = {
     "Invoices": (
-        "tax invoice",
-        "invoice number",
-        "invoice no",
-        "invoice date",
-        "amount due",
-        "bill to",
-        "gstin",
-        "total invoice",
-        "invoice",
+        "tax invoice", "invoice number", "invoice no", "invoice date",
+        "amount due", "bill to", "gstin", "total invoice", "invoice",
     ),
     "Receipts": (
-        "payment receipt",
-        "receipt number",
-        "transaction id",
-        "payment received",
-        "amount paid",
-        "receipt",
+        "payment receipt", "receipt number", "transaction id",
+        "payment received", "amount paid", "receipt",
     ),
     "Resumes": (
-        "curriculum vitae",
-        "professional summary",
-        "work experience",
-        "resume",
-        "employment history",
-        "technical skills",
+        "curriculum vitae", "professional summary", "work experience",
+        "resume", "employment history", "technical skills",
     ),
     "Certificates": (
-        "certificate of completion",
-        "certifies that",
-        "certificate number",
-        "awarded to",
-        "this is to certify",
-        "certificate",
+        "certificate of completion", "certifies that", "certificate number",
+        "awarded to", "this is to certify", "certificate",
     ),
     "Contracts": (
-        "employment agreement",
-        "terms and conditions",
-        "hereby agree",
-        "agreement between",
-        "effective date",
-        "party of the first part",
+        "employment agreement", "terms and conditions", "hereby agree",
+        "agreement between", "effective date", "party of the first part",
     ),
     "Reports": (
-        "executive summary",
-        "methodology",
-        "key findings",
-        "annual report",
-        "quarterly report",
-        "conclusion",
+        "executive summary", "methodology", "key findings",
+        "annual report", "quarterly report", "conclusion",
     ),
 }
 
@@ -74,18 +47,16 @@ def classify_content_subcategory(content: str) -> str | None:
 
     scores: list[tuple[int, str]] = []
     for category, terms in _CATEGORY_TERMS.items():
-        matched = 0
-        for term in terms:
-            pattern = rf"(?<!\\w){re.escape(term)}(?!\\w)"
-            if re.search(pattern, text):
-                matched += 1
+        matched = sum(
+            bool(re.search(rf"(?<!\w){re.escape(term)}(?!\w)", text))
+            for term in terms
+        )
         if matched >= 2:
             scores.append((matched, category))
 
     if not scores:
         return None
 
-    # Stable ordering makes ties deterministic and independent of set iteration.
     scores.sort(key=lambda item: (-item[0], item[1]))
     if len(scores) > 1 and scores[0][0] == scores[1][0]:
         return None
