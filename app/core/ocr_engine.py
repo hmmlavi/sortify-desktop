@@ -104,8 +104,12 @@ def extract_image_text(path: Path, max_chars: int = MAX_OCR_CHARS) -> str:
         return ""
 
 
-def extract_pdf_text(path: Path, max_chars: int = MAX_OCR_CHARS) -> str:
-    """Render up to five PDF pages locally and OCR them; no network access."""
+def extract_pdf_text(
+    path: Path,
+    max_chars: int = MAX_OCR_CHARS,
+    page_indexes: list[int] | None = None,
+) -> str:
+    """Render up to five selected PDF pages locally and OCR them; no network access."""
     if not ocr_dependencies_available(for_pdf=True):
         return ""
     try:
@@ -114,7 +118,13 @@ def extract_pdf_text(path: Path, max_chars: int = MAX_OCR_CHARS) -> str:
         chunks: list[str] = []
         total = 0
         try:
-            for page_index in range(min(len(document), MAX_OCR_PAGES)):
+            selected_pages = (
+                page_indexes if page_indexes is not None
+                else list(range(min(len(document), MAX_OCR_PAGES)))
+            )
+            for page_index in selected_pages[:MAX_OCR_PAGES]:
+                if not isinstance(page_index, int) or page_index < 0 or page_index >= len(document):
+                    continue
                 page = document[page_index]
                 try:
                     page_width, page_height = page.get_size()
