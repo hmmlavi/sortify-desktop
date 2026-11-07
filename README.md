@@ -89,6 +89,16 @@ The builds are **not code-signed**, so Windows SmartScreen may show *"Windows pr
 
 No account, login, or API key is needed. Settings and history are stored in `%APPDATA%\Sortify\`.
 
+### Optional offline OCR (source installs)
+
+Scanned PDFs and text inside images can be read locally by installing the OCR add-on. The standard installer remains small and does not include OCR. The add-on includes RapidOCR model files and the CPU inference runtime; after installation, OCR runs without an internet connection.
+
+```powershell
+pip install -r requirements-ocr.txt
+```
+
+OCR is bounded to five pages per PDF and downsizes large images before inference. If the add-on is not installed, Sortify keeps its existing metadata and text-extraction fallback.
+
 ### Keyboard shortcuts
 
 | Action | Shortcut | Action | Shortcut |
