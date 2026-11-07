@@ -151,24 +151,28 @@ def extract_content(path: Path, max_chars: int = 12000) -> tuple[str, str]:
                         chunks.append(f"Subject: {str(subject).strip()}")
             except (AttributeError, KeyError, TypeError, ValueError):
                 chunks = []
-            has_selectable_text = False
-            for page in reader.pages[:20]:
+            blank_page_indexes: list[int] = []
+            for page_index, page in enumerate(reader.pages[:20]):
                 page_text = page.extract_text() or ""
-                if page_text.strip():
-                    has_selectable_text = True
+                if not page_text.strip():
+                    blank_page_indexes.append(page_index)
                 chunks.append(page_text)
                 if sum(map(len, chunks)) >= max_chars:
                     break
             text = "\n".join(chunks)[:max_chars]
-            if not has_selectable_text:
-                # Metadata alone must not suppress OCR for a scanned document.
-                ocr_text = extract_pdf_text(path, max_chars=max_chars)
+            if blank_page_indexes:
+                # OCR only image-only pages, including mixed scanned/searchable PDFs.
+                ocr_text = extract_pdf_text(
+                    path,
+                    max_chars=max(0, max_chars - len(text)),
+                    page_indexes=blank_page_indexes[:5],
+                )
                 if ocr_text:
                     combined = "\n".join(part for part in chunks if part.strip())
                     combined = "\n".join(part for part in (combined, ocr_text) if part)
                     return combined[:max_chars], "pdf_ocr"
-                if not text.strip():
-                    return "", "pdf_scan_or_empty"
+            if not text.strip():
+                return "", "pdf_scan_or_empty"
             return text, "pdf"
 
         if ext == ".docx":
