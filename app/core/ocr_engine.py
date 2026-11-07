@@ -117,7 +117,13 @@ def extract_pdf_text(path: Path, max_chars: int = MAX_OCR_CHARS) -> str:
             for page_index in range(min(len(document), MAX_OCR_PAGES)):
                 page = document[page_index]
                 try:
-                    image = page.render(scale=OCR_RENDER_SCALE).to_pil()
+                    page_width, page_height = page.get_size()
+                    page_pixels = max(1.0, page_width * page_height)
+                    safe_scale = min(
+                        OCR_RENDER_SCALE,
+                        (MAX_OCR_IMAGE_PIXELS / page_pixels) ** 0.5,
+                    )
+                    image = page.render(scale=max(0.1, safe_scale)).to_pil()
                     remaining = max_chars - total
                     if remaining <= 0:
                         break
