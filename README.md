@@ -29,7 +29,7 @@ batch can be undone.
 
 ## Features
 
-- **Reads inside files.** Bounded excerpts from PDF, Word, Excel, PowerPoint, text, CSV, JSON, YAML, HTML, and image metadata.
+- **Reads inside files.** Bounded excerpts from PDF, Word, Excel, PowerPoint, text, CSV, JSON, YAML, HTML, and image metadata, with optional offline OCR for scanned PDFs and text-bearing images.
 - **Two naming engines.** An offline *local heuristic* engine (the default), or any OpenAI-compatible endpoint you configure, with explicit consent.
 - **You approve every change.** Edit any proposal inline, resolve duplicate destinations, and check the exact before-and-after table in *Preview plan*.
 - **Safe renames.** Collisions are detected before the batch starts. Files are never overwritten, and failures are reported per file.
