@@ -61,3 +61,16 @@ def test_scanned_pdf_with_metadata_still_uses_ocr(monkeypatch, tmp_path):
     assert kind == "pdf_ocr"
     assert "Scanned invoice" in text
     assert "Invoice Number INV-42" in text
+
+
+def test_image_extraction_appends_local_ocr_text(monkeypatch, tmp_path):
+    image_path = tmp_path / "photo.png"
+    Image.new("RGB", (32, 20)).save(image_path)
+    monkeypatch.setattr(
+        file_extractor, "extract_image_text", lambda _path, max_chars: "RECEIPT TOTAL 250"
+    )
+
+    text, kind = file_extractor.extract_content(image_path)
+    assert kind == "image_ocr"
+    assert "Image text (OCR)" in text
+    assert "RECEIPT TOTAL 250" in text
