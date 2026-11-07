@@ -151,17 +151,24 @@ def extract_content(path: Path, max_chars: int = 12000) -> tuple[str, str]:
                         chunks.append(f"Subject: {str(subject).strip()}")
             except (AttributeError, KeyError, TypeError, ValueError):
                 chunks = []
+            has_selectable_text = False
             for page in reader.pages[:20]:
-                chunks.append(page.extract_text() or "")
+                page_text = page.extract_text() or ""
+                if page_text.strip():
+                    has_selectable_text = True
+                chunks.append(page_text)
                 if sum(map(len, chunks)) >= max_chars:
                     break
             text = "\n".join(chunks)[:max_chars]
-            if not text.strip():
-                # Optional offline OCR; absent extras preserve the current fallback.
+            if not has_selectable_text:
+                # Metadata alone must not suppress OCR for a scanned document.
                 ocr_text = extract_pdf_text(path, max_chars=max_chars)
                 if ocr_text:
-                    return ocr_text[:max_chars], "pdf_ocr"
-                return "", "pdf_scan_or_empty"
+                    combined = "\n".join(part for part in chunks if part.strip())
+                    combined = "\n".join(part for part in (combined, ocr_text) if part)
+                    return combined[:max_chars], "pdf_ocr"
+                if not text.strip():
+                    return "", "pdf_scan_or_empty"
             return text, "pdf"
 
         if ext == ".docx":
