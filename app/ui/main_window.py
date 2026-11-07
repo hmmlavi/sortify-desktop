@@ -52,9 +52,8 @@ from app.ai.base_provider import AIProviderError
 from app.ai.openai_compatible import OpenAICompatibleProvider
 from app.config import APP_NAME, APP_TAGLINE, APP_VERSION, VALID_NAMING_STYLES, Settings
 from app.core.batch_names import resolve_batch_conflicts as resolve_batch_names
-from app.core.file_extractor import extract_content
-from app.core.ocr_engine import ocr_dependencies_available
 from app.core.content_classifier import organization_category
+from app.core.file_extractor import extract_content
 from app.core.filename_generator import (
     ai_suggestion,
     fallback_suggestion,
@@ -64,6 +63,7 @@ from app.core.filename_validator import (
     sanitize_filename,
     validate_filename_text,
 )
+from app.core.ocr_engine import ocr_dependencies_available
 from app.core.operation_history import OperationHistory
 from app.core.rename_engine import RenameEngine
 from app.core.scanner import SUPPORTED, scan_folder
