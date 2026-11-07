@@ -53,6 +53,7 @@ from app.ai.openai_compatible import OpenAICompatibleProvider
 from app.config import APP_NAME, APP_TAGLINE, APP_VERSION, VALID_NAMING_STYLES, Settings
 from app.core.batch_names import resolve_batch_conflicts as resolve_batch_names
 from app.core.file_extractor import extract_content
+from app.core.content_classifier import organization_category
 from app.core.filename_generator import (
     ai_suggestion,
     fallback_suggestion,
@@ -1315,7 +1316,10 @@ class MainWindow(QMainWindow):
                 record.rationale = cached.get("rationale", "")
                 record.extracted_text = cached.get("extracted_text", record.extracted_text)
                 record.source = cached.get("source", record.source)
-                record.category = suggest_category(record.extension, record.source)
+                record.category = organization_category(
+                    suggest_category(record.extension, record.source),
+                    record.extracted_text,
+                )
                 record.status = cached.get(
                     "status", "AI suggestion ready" if provider else "Local fallback"
                 )
@@ -1326,7 +1330,9 @@ class MainWindow(QMainWindow):
         text, kind = extract_content(record.path, self.settings.max_extract_chars)
         record.extracted_text = text
         record.source = kind
-        record.category = suggest_category(record.extension, kind)
+        record.category = organization_category(
+            suggest_category(record.extension, kind), text
+        )
 
         is_image = record.extension in IMAGE_EXTENSIONS
         if provider and (text.strip() or is_image):
