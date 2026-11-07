@@ -9,8 +9,8 @@ import zipfile
 from html.parser import HTMLParser
 from pathlib import Path
 
-from app.models.file_record import IMAGE_EXTENSIONS
 from app.core.ocr_engine import extract_image_text, extract_pdf_text
+from app.models.file_record import IMAGE_EXTENSIONS
 
 MAX_FILE_BYTES = 100 * 1024 * 1024  # 100 MB
 MAX_ARCHIVE_UNCOMPRESSED_BYTES = 100 * 1024 * 1024  # 100 MB zip-bomb cap
