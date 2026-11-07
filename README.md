@@ -105,7 +105,7 @@ No account, login, or API key is needed. Settings and history are stored in `%AP
 - **Presentations:** `.pptx`
 - **Images:** `.jpg` `.jpeg` `.png` `.webp` `.gif` `.bmp` `.tiff`
 
-Limits: password-protected files are reported as unreadable. Image-only PDFs fall back to filename and metadata, because no OCR is bundled. Files over 100 MB and images over 64 megapixels are skipped. Unsupported files are listed as *Unsupported* and never renamed.
+Limits: password-protected files are reported as unreadable. Image-only PDFs use filename and metadata unless the optional offline OCR add-on is installed. OCR processes up to five PDF pages and text-bearing images locally. Files over 100 MB and images over 64 megapixels are skipped. Unsupported files are listed as *Unsupported* and never renamed.
 
 ## Privacy and security
 
