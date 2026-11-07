@@ -52,6 +52,7 @@ from app.ai.base_provider import AIProviderError
 from app.ai.openai_compatible import OpenAICompatibleProvider
 from app.config import APP_NAME, APP_TAGLINE, APP_VERSION, VALID_NAMING_STYLES, Settings
 from app.core.batch_names import resolve_batch_conflicts as resolve_batch_names
+from app.core.content_classifier import organization_category
 from app.core.file_extractor import extract_content
 from app.core.filename_generator import (
     ai_suggestion,
@@ -62,6 +63,7 @@ from app.core.filename_validator import (
     sanitize_filename,
     validate_filename_text,
 )
+from app.core.ocr_engine import ocr_dependencies_available
 from app.core.operation_history import OperationHistory
 from app.core.rename_engine import RenameEngine
 from app.core.scanner import SUPPORTED, scan_folder
@@ -1296,7 +1298,8 @@ class MainWindow(QMainWindow):
         raw = (
             f"{record.path}|{record.size_bytes}|{record.modified_iso}|"
             f"{self.settings.naming_style}|{self.settings.max_filename_length}|"
-            f"{self.settings.prepend_date}|{self.settings.custom_prefix}|{mode}"
+            f"{self.settings.prepend_date}|{self.settings.custom_prefix}|{mode}|"
+            f"ocr:{int(ocr_dependencies_available(for_pdf=record.extension.lower() == '.pdf'))}"
         )
         return hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()
 
@@ -1315,7 +1318,10 @@ class MainWindow(QMainWindow):
                 record.rationale = cached.get("rationale", "")
                 record.extracted_text = cached.get("extracted_text", record.extracted_text)
                 record.source = cached.get("source", record.source)
-                record.category = suggest_category(record.extension, record.source)
+                record.category = organization_category(
+                    suggest_category(record.extension, record.source),
+                    record.extracted_text,
+                )
                 record.status = cached.get(
                     "status", "AI suggestion ready" if provider else "Local fallback"
                 )
@@ -1326,7 +1332,9 @@ class MainWindow(QMainWindow):
         text, kind = extract_content(record.path, self.settings.max_extract_chars)
         record.extracted_text = text
         record.source = kind
-        record.category = suggest_category(record.extension, kind)
+        record.category = organization_category(
+            suggest_category(record.extension, kind), text
+        )
 
         is_image = record.extension in IMAGE_EXTENSIONS
         if provider and (text.strip() or is_image):

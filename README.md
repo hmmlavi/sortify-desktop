@@ -29,7 +29,7 @@ batch can be undone.
 
 ## Features
 
-- **Reads inside files.** Bounded excerpts from PDF, Word, Excel, PowerPoint, text, CSV, JSON, YAML, HTML, and image metadata.
+- **Reads inside files.** Bounded excerpts from PDF, Word, Excel, PowerPoint, text, CSV, JSON, YAML, HTML, and image metadata, with optional offline OCR for scanned PDFs and text-bearing images.
 - **Two naming engines.** An offline *local heuristic* engine (the default), or any OpenAI-compatible endpoint you configure, with explicit consent.
 - **You approve every change.** Edit any proposal inline, resolve duplicate destinations, and check the exact before-and-after table in *Preview plan*.
 - **Safe renames.** Collisions are detected before the batch starts. Files are never overwritten, and failures are reported per file.
@@ -89,6 +89,16 @@ The builds are **not code-signed**, so Windows SmartScreen may show *"Windows pr
 
 No account, login, or API key is needed. Settings and history are stored in `%APPDATA%\Sortify\`.
 
+### Optional offline OCR (source installs)
+
+Scanned PDFs and text inside images can be read locally by installing the OCR add-on. The standard installer remains small and does not include OCR. The add-on includes RapidOCR model files and the CPU inference runtime; after installation, OCR runs without an internet connection.
+
+```powershell
+pip install -r requirements-ocr.txt
+```
+
+OCR is bounded to five pages per PDF and downsizes large images before inference. If the add-on is not installed, Sortify keeps its existing metadata and text-extraction fallback.
+
 ### Keyboard shortcuts
 
 | Action | Shortcut | Action | Shortcut |
@@ -105,7 +115,7 @@ No account, login, or API key is needed. Settings and history are stored in `%AP
 - **Presentations:** `.pptx`
 - **Images:** `.jpg` `.jpeg` `.png` `.webp` `.gif` `.bmp` `.tiff`
 
-Limits: password-protected files are reported as unreadable. Image-only PDFs fall back to filename and metadata, because no OCR is bundled. Files over 100 MB and images over 64 megapixels are skipped. Unsupported files are listed as *Unsupported* and never renamed.
+Limits: password-protected files are reported as unreadable. Image-only PDFs use filename and metadata unless the optional offline OCR add-on is installed. OCR processes up to five PDF pages and text-bearing images locally. Files over 100 MB and images over 64 megapixels are skipped. Unsupported files are listed as *Unsupported* and never renamed.
 
 ## Privacy and security
 

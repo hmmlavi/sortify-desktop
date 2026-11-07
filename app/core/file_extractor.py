@@ -9,6 +9,7 @@ import zipfile
 from html.parser import HTMLParser
 from pathlib import Path
 
+from app.core.ocr_engine import extract_image_text, extract_pdf_text
 from app.models.file_record import IMAGE_EXTENSIONS
 
 MAX_FILE_BYTES = 100 * 1024 * 1024  # 100 MB
@@ -150,11 +151,26 @@ def extract_content(path: Path, max_chars: int = 12000) -> tuple[str, str]:
                         chunks.append(f"Subject: {str(subject).strip()}")
             except (AttributeError, KeyError, TypeError, ValueError):
                 chunks = []
-            for page in reader.pages[:20]:
-                chunks.append(page.extract_text() or "")
+            blank_page_indexes: list[int] = []
+            for page_index, page in enumerate(reader.pages[:20]):
+                page_text = page.extract_text() or ""
+                if not page_text.strip():
+                    blank_page_indexes.append(page_index)
+                chunks.append(page_text)
                 if sum(map(len, chunks)) >= max_chars:
                     break
             text = "\n".join(chunks)[:max_chars]
+            if blank_page_indexes:
+                # OCR only image-only pages, including mixed scanned/searchable PDFs.
+                ocr_text = extract_pdf_text(
+                    path,
+                    max_chars=max(0, max_chars - len(text)),
+                    page_indexes=blank_page_indexes[:5],
+                )
+                if ocr_text:
+                    combined = "\n".join(part for part in chunks if part.strip())
+                    combined = "\n".join(part for part in (combined, ocr_text) if part)
+                    return combined[:max_chars], "pdf_ocr"
             if not text.strip():
                 return "", "pdf_scan_or_empty"
             return text, "pdf"
@@ -251,7 +267,12 @@ def extract_content(path: Path, max_chars: int = 12000) -> tuple[str, str]:
                             val = exif.get(tag_id)
                             if val and isinstance(val, str) and val.strip():
                                 meta_parts.append(f"{label}: {val.strip()[:80]}")
-                    return "; ".join(meta_parts), "image"
+                    metadata = "; ".join(meta_parts)
+                    # Metadata remains the default; installed offline OCR adds image text.
+                    ocr_text = extract_image_text(path, max_chars=max_chars)
+                    if ocr_text:
+                        return f"{metadata}\nImage text (OCR):\n{ocr_text}"[:max_chars], "image_ocr"
+                    return metadata, "image"
             except ImportError:
                 return (
                     "Image file. Visual content requires a vision-capable AI provider; no image description available locally.",
