@@ -1,0 +1,5 @@
+# Optional offline OCR add-on (not included in the standard installer)
+# Model files are included in the RapidOCR wheel; runtime inference is local.
+rapidocr==3.10.0
+onnxruntime==1.31.1
+pypdfium2==5.15.0
