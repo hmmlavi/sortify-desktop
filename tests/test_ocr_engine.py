@@ -1,5 +1,6 @@
-from types import ModuleType, SimpleNamespace
 import sys
+from types import ModuleType, SimpleNamespace
+from typing import ClassVar
 
 from PIL import Image
 
@@ -47,8 +48,8 @@ def test_scanned_pdf_with_metadata_still_uses_ocr(monkeypatch, tmp_path):
 
     class FakeReader:
         is_encrypted = False
-        metadata = {"/Title": "Scanned invoice"}
-        pages = [SimpleNamespace(extract_text=lambda: "")]
+        metadata: ClassVar[dict[str, str]] = {"/Title": "Scanned invoice"}
+        pages: ClassVar[list[SimpleNamespace]] = [SimpleNamespace(extract_text=lambda: "")]
 
     fake_pypdf = ModuleType("pypdf")
     fake_pypdf.PdfReader = lambda _path: FakeReader()
@@ -83,7 +84,7 @@ def test_mixed_pdf_ocr_targets_only_pages_without_text(monkeypatch, tmp_path):
     class FakeReader:
         is_encrypted = False
         metadata = None
-        pages = [
+        pages: ClassVar[list[SimpleNamespace]] = [
             SimpleNamespace(extract_text=lambda: "Selectable text"),
             SimpleNamespace(extract_text=lambda: ""),
         ]
