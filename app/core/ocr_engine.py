@@ -99,7 +99,7 @@ def extract_image_text(path: Path, max_chars: int = MAX_OCR_CHARS) -> str:
         with Image.open(path) as image:
             image.load()
             return _recognize(image.copy(), max_chars=max_chars)
-    except Exception as exc:  # OCR must not make metadata extraction fail.
+    except Exception as exc:  # noqa: BLE001 - OCR must not break normal metadata extraction.
         logger.warning("Local image OCR skipped for %s (%s)", path, type(exc).__name__)
         return ""
 
@@ -146,6 +146,6 @@ def extract_pdf_text(
         finally:
             document.close()
         return "\n".join(chunks).strip()
-    except Exception as exc:  # OCR must not make normal PDF extraction fail.
+    except Exception as exc:  # noqa: BLE001 - OCR must not break normal PDF extraction.
         logger.warning("Local PDF OCR skipped for %s (%s)", path, type(exc).__name__)
         return ""
