@@ -1,8 +1,9 @@
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
+import sys
 
 from PIL import Image
 
-from app.core import ocr_engine
+from app.core import file_extractor, ocr_engine
 
 
 def test_recognize_filters_low_confidence_and_caps_text(monkeypatch):
@@ -38,3 +39,25 @@ def test_pdf_ocr_is_safely_skipped_without_optional_dependencies(monkeypatch, tm
     pdf_path.write_bytes(b"%PDF-1.4")
     monkeypatch.setattr(ocr_engine, "ocr_dependencies_available", lambda **kwargs: False)
     assert ocr_engine.extract_pdf_text(pdf_path) == ""
+
+
+def test_scanned_pdf_with_metadata_still_uses_ocr(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "scanned.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4")
+
+    class FakeReader:
+        is_encrypted = False
+        metadata = {"/Title": "Scanned invoice"}
+        pages = [SimpleNamespace(extract_text=lambda: "")]
+
+    fake_pypdf = ModuleType("pypdf")
+    fake_pypdf.PdfReader = lambda _path: FakeReader()
+    monkeypatch.setitem(sys.modules, "pypdf", fake_pypdf)
+    monkeypatch.setattr(
+        file_extractor, "extract_pdf_text", lambda _path, max_chars: "Invoice Number INV-42"
+    )
+
+    text, kind = file_extractor.extract_content(pdf_path)
+    assert kind == "pdf_ocr"
+    assert "Scanned invoice" in text
+    assert "Invoice Number INV-42" in text
