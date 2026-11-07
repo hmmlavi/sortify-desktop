@@ -4,8 +4,6 @@ The classifier deliberately prefers the existing file-type folder when evidence 
 It does not inspect file contents itself; callers pass bounded text extracted by file_extractor.
 """
 
-from __future__ import annotations
-
 import re
 
 
