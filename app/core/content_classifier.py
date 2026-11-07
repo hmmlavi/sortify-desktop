@@ -7,6 +7,7 @@ It does not inspect file contents itself; callers pass bounded text extracted by
 import re
 
 
+
 # Distinct phrases are counted once. Requiring multiple signals avoids classifying a
 # generic document from a single incidental word.
 _CATEGORY_TERMS: dict[str, tuple[str, ...]] = {
