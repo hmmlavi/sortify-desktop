@@ -54,7 +54,7 @@ def test_scanned_pdf_with_metadata_still_uses_ocr(monkeypatch, tmp_path):
     fake_pypdf.PdfReader = lambda _path: FakeReader()
     monkeypatch.setitem(sys.modules, "pypdf", fake_pypdf)
     monkeypatch.setattr(
-        file_extractor, "extract_pdf_text", lambda _path, max_chars: "Invoice Number INV-42"
+        file_extractor, "extract_pdf_text", lambda _path, max_chars, page_indexes=None: "Invoice Number INV-42"
     )
 
     text, kind = file_extractor.extract_content(pdf_path)
@@ -74,3 +74,32 @@ def test_image_extraction_appends_local_ocr_text(monkeypatch, tmp_path):
     assert kind == "image_ocr"
     assert "Image text (OCR)" in text
     assert "RECEIPT TOTAL 250" in text
+
+
+def test_mixed_pdf_ocr_targets_only_pages_without_text(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "mixed.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4")
+
+    class FakeReader:
+        is_encrypted = False
+        metadata = None
+        pages = [
+            SimpleNamespace(extract_text=lambda: "Selectable text"),
+            SimpleNamespace(extract_text=lambda: ""),
+        ]
+
+    fake_pypdf = ModuleType("pypdf")
+    fake_pypdf.PdfReader = lambda _path: FakeReader()
+    monkeypatch.setitem(sys.modules, "pypdf", fake_pypdf)
+    captured = {}
+
+    def fake_ocr(_path, max_chars, page_indexes=None):
+        captured["page_indexes"] = page_indexes
+        return "Scanned page text"
+
+    monkeypatch.setattr(file_extractor, "extract_pdf_text", fake_ocr)
+    text, kind = file_extractor.extract_content(pdf_path)
+    assert kind == "pdf_ocr"
+    assert captured["page_indexes"] == [1]
+    assert "Selectable text" in text
+    assert "Scanned page text" in text
