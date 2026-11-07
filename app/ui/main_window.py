@@ -53,6 +53,7 @@ from app.ai.openai_compatible import OpenAICompatibleProvider
 from app.config import APP_NAME, APP_TAGLINE, APP_VERSION, VALID_NAMING_STYLES, Settings
 from app.core.batch_names import resolve_batch_conflicts as resolve_batch_names
 from app.core.file_extractor import extract_content
+from app.core.ocr_engine import ocr_dependencies_available
 from app.core.content_classifier import organization_category
 from app.core.filename_generator import (
     ai_suggestion,
@@ -1297,7 +1298,8 @@ class MainWindow(QMainWindow):
         raw = (
             f"{record.path}|{record.size_bytes}|{record.modified_iso}|"
             f"{self.settings.naming_style}|{self.settings.max_filename_length}|"
-            f"{self.settings.prepend_date}|{self.settings.custom_prefix}|{mode}"
+            f"{self.settings.prepend_date}|{self.settings.custom_prefix}|{mode}|"
+            f"ocr:{int(ocr_dependencies_available(for_pdf=record.extension.lower() == '.pdf'))}"
         )
         return hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()
 
