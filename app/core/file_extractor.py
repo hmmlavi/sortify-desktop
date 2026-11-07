@@ -10,6 +10,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 from app.models.file_record import IMAGE_EXTENSIONS
+from app.core.ocr_engine import extract_image_text, extract_pdf_text
 
 MAX_FILE_BYTES = 100 * 1024 * 1024  # 100 MB
 MAX_ARCHIVE_UNCOMPRESSED_BYTES = 100 * 1024 * 1024  # 100 MB zip-bomb cap
@@ -156,6 +157,10 @@ def extract_content(path: Path, max_chars: int = 12000) -> tuple[str, str]:
                     break
             text = "\n".join(chunks)[:max_chars]
             if not text.strip():
+                # Optional offline OCR; absent extras preserve the current fallback.
+                ocr_text = extract_pdf_text(path, max_chars=max_chars)
+                if ocr_text:
+                    return ocr_text[:max_chars], "pdf_ocr"
                 return "", "pdf_scan_or_empty"
             return text, "pdf"
 
@@ -251,7 +256,12 @@ def extract_content(path: Path, max_chars: int = 12000) -> tuple[str, str]:
                             val = exif.get(tag_id)
                             if val and isinstance(val, str) and val.strip():
                                 meta_parts.append(f"{label}: {val.strip()[:80]}")
-                    return "; ".join(meta_parts), "image"
+                    metadata = "; ".join(meta_parts)
+                    # Metadata remains the default; installed offline OCR adds image text.
+                    ocr_text = extract_image_text(path, max_chars=max_chars)
+                    if ocr_text:
+                        return f"{metadata}\nImage text (OCR):\n{ocr_text}"[:max_chars], "image_ocr"
+                    return metadata, "image"
             except ImportError:
                 return (
                     "Image file. Visual content requires a vision-capable AI provider; no image description available locally.",
