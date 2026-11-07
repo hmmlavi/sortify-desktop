@@ -15,7 +15,7 @@ def test_recognize_filters_low_confidence_and_caps_text(monkeypatch):
             )
 
     monkeypatch.setattr(ocr_engine, "_get_engine", lambda: FakeEngine())
-    result = ocr_engine._recognize(Image.new("RGB", (20, 20)), max_chars=30)
+    result = ocr_engine._recognize(Image.new("RGB", (20, 20)), max_chars=17)
     assert result == "Invoice Number 42"
 
 
